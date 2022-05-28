@@ -38,14 +38,12 @@ export default {
         Button,
         AddFeed
     },
-    props: {
-        explorableSites: {
-            type: Array,
-            default: () => [],
-            required: true,
-        },
-        showAddFeed: false,
-        feed: ''
+    data() {
+        return {
+            explorableSites: [],
+            showAddFeed: false,
+            feed: ''
+        }
     },
     methods: {
         async sites() {

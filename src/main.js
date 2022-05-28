@@ -2,6 +2,7 @@ import Vue from 'vue'
 import App from './App'
 import VueRouter from 'vue-router'
 import Explore from './components/Explore'
+import Content from './components/Content'
 import {generateUrl} from "@nextcloud/router";
 import Vuex from 'vuex'
 import axios from "@nextcloud/axios";
@@ -27,6 +28,16 @@ const routes = [
         path: '#explore',
         component: Explore
     },
+    {
+        name: 'content',
+        path: '#content',
+        component: Content
+    },
+    {
+        name: 'content_unread',
+        path: '#content/unread',
+        component: Content
+    },
 ]
 
 const router = new VueRouter({
@@ -38,21 +49,36 @@ const router = new VueRouter({
 const store = new Vuex.Store({
     state: {
         folders: [],
-        feeds: []
+        feeds: [],
+        unreadCount: 0
     },
     mutations: {
         addFolders(state, folders) {
             folders.forEach(it => {
-                it.feedCount = 0
+                it.unreadCount = 0
+                it.feeds = [];
                 state.folders.push(it)
             })
+        },
+        deleteFolder(state, folder) {
+            const index = state.folders.indexOf(folder)
+            state.folders.splice(index, 1);
+        },
+        deleteFeed(state, feed) {
+            const index = state.feeds.indexOf(feed)
+            state.feeds.splice(index, 1);
         },
         addFeeds(state, feeds) {
             feeds.forEach(it => {
                 state.feeds.push(it)
                 const folder = state.folders.find(folder => folder.id === it.folderId)
-                folder.feeds.push(it)
-                folder.feedCount += it.unreadCount
+                if (!!folder) {
+                    folder.feeds.push(it)
+                    folder.unreadCount += it.unreadCount
+                } else {
+                    it.folderId = null
+                }
+                state.unreadCount += it.unreadCount
             })
         }
     },
@@ -70,7 +96,9 @@ const store = new Vuex.Store({
 
             this.updateUnreadCache();
              */
-            axios.delete(folderUrl + '/' + folder.id).then()
+            axios.delete(folderUrl + '/' + folder.id).then(
+                response => commit('deleteFolder', folder)
+            )
         },
         loadFolder({commit}) {
             console.log('loading folders')
@@ -83,11 +111,17 @@ const store = new Vuex.Store({
                 }
             )
         },
-        addFeed({commit}, {feedReq}) {
+        async addFeed({commit}, {feedReq}) {
             console.log(feedReq)
             let url = feedReq.url.trim();
             if (!url.startsWith('http')) {
                 url = 'https://' + url;
+            }
+
+            if (feedReq.createNewFolder) {
+                const response = await axios.post(folderUrl, {folderName: feedReq.newFolderName});
+                commit('addFolders', response.data.folders);
+                feedReq.folder = response.data.folders[0];
             }
 
             /**
@@ -103,9 +137,6 @@ const store = new Vuex.Store({
                 unreadCount: 0
             };
 
-            // this.add(feed);
-            // this.updateFolderCache();
-
             axios.post(feedUrl, {
                 url: feed.url,
                 parentFolderId: feed.folderId,
@@ -113,7 +144,14 @@ const store = new Vuex.Store({
                 user: null,
                 password: null,
                 fullDiscover: feed.autoDiscover
-            }).then();
+            }).then(
+                response => commit('addFeeds', response.data.feeds)
+            );
+        },
+        deleteFeed({commit}, {feed}) {
+            axios.delete(feedUrl + '/' + feed.id).then(
+                response => commit('deleteFeed', feed)
+            )
         }
     }
 });
