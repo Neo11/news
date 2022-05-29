@@ -20,6 +20,7 @@ export default {
 	},
     created() {
         this.$store.dispatch('loadFolder')
+        this.$store.dispatch('loadOptions')
     }
 
 }

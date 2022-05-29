@@ -1,6 +1,6 @@
 <?php
 script('news', 'nextcloud-news-main');
-style('news', 'navigation');
+style('news', 'icons');
 style('news', 'explore');
 style('news', 'admin');
 style('news', 'app');

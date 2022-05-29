@@ -6,7 +6,7 @@
         </EmptyContent>
 
         <div id="articles"
-             :class="{ compact: isCompactView, 'feed-view': isFeed }"
+             :class="{ compact: settings.compact, 'feed-view': isFeed }"
              class="app-content-detail">
 
             <!--        <button ng-controller="NavigationController as Navigation" id="mark-all-read-button" ng-click="Navigation.markCurrentRead()" class="hidden">-->
@@ -20,11 +20,9 @@
                 <li class="item"
                     :class="[getFeed(item.feedId).cssClass, {read: !item.unread, open: item.show, active: isItemActive(item.id)}]"
                     v-for="item in items" :key="item.id"
-                    @click="markRead(item.id);setItemActive(item.id)"
+                    @click="markRead(item.id);toggleItem(item)"
                     @mouseup="markRead(item.id)">
-                    <div class="utils"
-                         ng-click="Content.toggleItem(item)"
-                         ng-class="{'compact-dropdown': Content.showDropdown[item.id]}">
+                    <div class="utils">
                         <ul>
                             <li class="util-spacer"></li>
                             <li class="util only-in-compact">
@@ -44,22 +42,18 @@
                                     class="intro" v-html="item.intro"></span></a></h1>
                             </li>
                             <li class="only-in-compact">
-                                <!--                            <time class="date"-->
-                                <!--                                  :title="item.pubDate*1000 |-->
-                                <!--                                            date:'yyyy-MM-dd HH:mm:ss'"-->
-                                <!--                                  datetime="item.pubDate*1000 |-->
-                                <!--                                            date:'yyyy-MM-ddTHH:mm:ssZ'">-->
-                                <!--                                {{ item.pubDate*1000 | relativeTimestamp }}-->
-                                <!--                            </time>-->
+                                <time class="date">
+                                    {{ item.pubDate * 1000 | formatDate(settings.language) }}
+                                </time>
                             </li>
                             <li @click="toggleStar(item.id)"
                                 class="util"
                                 news-stop-propagation>
-                                <button class="star svg"
+                                <button class="icon-star"
                                         v-if="!item.starred"
                                         title="t('news','Star article')">
                                 </button>
-                                <button class="starred svg"
+                                <button class="icon-starred"
                                         v-if="item.starred"
                                         :title="t('news','Unstar article')">
                                 </button>
@@ -77,16 +71,23 @@
                                 </button>
                             </li>
 
-                            <li
-                                class="util"
-                                news-stop-propagation>
-                                <button class="icon-share share"
-                                        :title="t('news','Share')"
-                                        @click="openDropdown(item.id)">
-                                </button>
+                            <li class="util">
+                                <Actions :forceMenu="true" default-icon="icon-share" >
+                                    <ActionInput icon="icon-user"
+                                                 type="multiselect"
+                                                 :options="formattedOptions"
+                                                 label="displayName" track-by="user"
+                                                 :user-select="true"
+                                                 style="width: 250px">
+                                        <template #singleLabel="{ option }">
+                                            <ListItemIcon v-bind="option" :title="option.displayName" :avatar-size="24" :no-margin="true" />
+                                        </template>
+                                    </ActionInput>
+                                </Actions>
                             </li>
 
-                            <li class="util more" news-stop-propagation ng-hide="noPlugins">
+
+                            <li class="util more" news-stop-propagation v-if="false">
                                 <button class="icon-more"
                                         news-toggle-show="#actions-item.id"></button>
                                 <div class="article-actions" id="actions-item.id">
@@ -94,11 +95,10 @@
                                 </div>
                             </li>
                         </ul>
-                        <!-- Share dropdown -->
+                        <!-- TODO integrate logik in new actions modal -->
                         <!--                    <template click-outside="Content.hide()" news-stop-propagation>-->
                         <!--                        <div-->
                         <!--                            ng-controller="ShareController as Share"-->
-                        <!--                            ng-if="Content.showDropdown[item.id]"-->
                         <!--                            class="dropdown-content"-->
                         <!--                            news-stop-propagation>-->
                         <!--                            &lt;!&ndash; Share with users &ndash;&gt;-->
@@ -165,16 +165,15 @@
                         <!-- End share dropdown -->
                     </div>
 
-                    <div class="article" v-if="!isCompactView || item.show">
+                    <div class="article" v-if="!settings.compact || item.show">
 
                         <div class="heading only-in-expanded">
-                            <!--                        <time class="date"-->
-                            <!--                              title="item.pubDate*1000 |-->
-                            <!--                            date:'yyyy-MM-dd HH:mm:ss'"-->
-                            <!--                              datetime="item.pubDate*1000 |-->
-                            <!--                            date:'yyyy-MM-ddTHH:mm:ssZ'">-->
-                            <!--                            {{ item.pubDate*1000 | relativeTimestamp }}-->
-                            <!--                        </time>-->
+
+<!--                            TODO title and date attributs -->
+                            <time class="date">
+                                {{ item.pubDate * 1000 | formatDate(settings.language) }}
+                            </time>
+
                             <h1 ng-attr-dir="item.rtl && 'rtl'">
                                 <a class="external"
                                    target="_blank"
@@ -191,10 +190,10 @@
                         {{ t('news', 'by') }} {{ item.author }}
                     </span>
                             <span v-if="!item.sharedBy" class="source">{{ t('news', 'from') }}
-                                <!--                        <a ng-href="#/items/feeds/item.feedId/">-->
-                                <!--                            {{ Content.getFeed(item.feedId).title }}-->
-                                <!--                            <img v-if="Content.getFeed(item.feedId).faviconLink && !Content.isCompactView()" :src="Content.getFeed(item.feedId).faviconLink" alt="favicon">-->
-                                <!--                        </a>-->
+                            <a href="#/items/feeds/item.feedId/">
+                                {{ getFeed(item.feedId).title }}
+                                <img v-if="getFeed(item.feedId).faviconLink && !settings.compact" :src="getFeed(item.feedId).faviconLink" alt="favicon">
+                            </a>
                     </span>
                             <span v-if="item.sharedBy">
                         <span v-if="item.author">-</span>
@@ -240,26 +239,68 @@
 
 <script>
 import EmptyContent from '@nextcloud/vue/dist/Components/EmptyContent'
+import Actions from '@nextcloud/vue/dist/Components/Actions'
+import ActionInput from '@nextcloud/vue/dist/Components/ActionInput'
+import ActionButton from '@nextcloud/vue/dist/Components/ActionButton'
+import ListItemIcon from '@nextcloud/vue/dist/Components/ListItemIcon'
 import axios from "@nextcloud/axios";
 import {generateUrl} from "@nextcloud/router";
 
+
+const maxRelDistance = 90*86400*1000;
+const relLimits = [
+    [ 7*86400*1000, 'week'   ],
+    [   86400*1000, 'day'    ],
+    [    3600*1000, 'hour'   ],
+    [      60*1000, 'minute' ],
+    [       1*1000, 'second' ]
+];
+const absLimits = [
+    [ 7*86400*1000, { hour: '2-digit', minute: '2-digit', dayPeriod: 'narrow',
+        year: 'numeric', month: 'short', day: 'numeric' } ],
+    [   43200*1000, { hour: '2-digit', minute: '2-digit', dayPeriod: 'narrow',
+        weekday: 'long' } ],
+    [            0, { hour: '2-digit', minute: '2-digit', dayPeriod: 'narrow' } ]
+];
+
+const options = ['admin', 'user1', 'user2', 'guest', 'group1']
+const formattedOptions = options.map(item => {
+    return {
+        user: item,
+        displayName: item,
+        subtitle: `This is the ${item.startsWith('group') ? 'group' : 'user'} ${item}`,
+        icon: item.startsWith('group') ? 'icon-group' : 'icon-user',
+        isNoUser: item.startsWith('group')
+    }
+})
+
 export default {
     components: {
-        EmptyContent
+        EmptyContent,
+        Actions,
+        ActionButton,
+        ActionInput,
+        ListItemIcon
     },
     computed: {
         isShowAll() {
             // TODO
             return true;
         },
-        isCompactView() {
-            return false
-        },
         isFeed() {
             return true
-        }
+        },
+        settings() {
+            return this.$store.state.settings
+        },
     },
     methods: {
+        toggleItem(item) {
+            if (this.settings.compact) {
+                console.log('toggle!')
+                this.$set(item, 'show', !item.show);
+            }
+        },
         markRead(itemId) {
             // TODO
         },
@@ -270,9 +311,6 @@ export default {
             // TODO
         },
         toggleKeepUnread(itemId) {
-            // TODO
-        },
-        openDropdown(itemId) {
             // TODO
         },
         isItemActive(itemId) {
@@ -297,14 +335,48 @@ export default {
     },
     data() {
         return {
-            items: []
+            items: [],
+            value: formattedOptions[0],
+            formattedOptions,
         }
     },
     created() {
-        axios.get(generateUrl('apps/news/items?limit=40&oldestFirst=false&search=&showAll=true&type=6'))
+        axios.get(
+            generateUrl('apps/news/items?limit=40&oldestFirst=false&search=&showAll=true&type=6'))
         .then(result => {
             this.items = result.data.items;
         })
+    },
+    filters: {
+        formatDate(timestamp, languageCode) {
+            const relFormat = Intl.RelativeTimeFormat ?
+                new Intl.RelativeTimeFormat(languageCode, { numeric: 'auto' }) : null;
+
+            if (!Number.isFinite(timestamp)) {
+                return timestamp;
+            }
+            const ts = new Date(timestamp);
+            const dist = ts.getTime() - Date.now();
+            const absDist = Math.abs(dist);
+            if (relFormat && absDist < maxRelDistance) {
+                for (const [ scale, unit ] of relLimits) {
+                    const value = Math.trunc(dist / scale);
+                    if (value !== 0) {
+                        return relFormat.format(value, unit);
+                    }
+                }
+                // We arrive here only if distance from now is less than 1 second
+                return relFormat.format(0, 'second');
+            } else {
+                for (const [ limit, options ] of absLimits) {
+                    if (absDist >= limit) {
+                        return ts.toLocaleString(languageCode, options);
+                    }
+                }
+                // We shouldn't be here
+                return ts.toLocaleString(languageCode, absLimits[absLimits.length - 1][1]);
+            }
+        }
     }
 }
 </script>
@@ -560,9 +632,11 @@ export default {
 .compact .only-in-compact {
     flex: 1 0 auto;
 }
+
 .compact .title {
     flex: 1 1 auto;
 }
+
 .open .utils ul {
     height: auto;
 }
@@ -578,11 +652,13 @@ export default {
 .compact .util-spacer {
     width: 5px;
 }
+
 @media screen and (max-width: 1024px) {
     .compact .util-spacer {
         width: 0;
         flex: 0 0 auto;
     }
+
     .item:first-of-type .util-spacer {
         width: 28px;
     }
@@ -636,18 +712,6 @@ export default {
 .utils .icon-toggle:hover,
 .utils .icon-toggle.keep-unread {
     opacity: 1;
-}
-
-.utils .star {
-    /*background-image: url('../img/inactive_star.svg');*/
-}
-
-.utils .starred {
-    /*background-image: url('../img/active_star.svg');*/
-}
-
-.utils .star:hover {
-    /*background-image: url('../img/hover_star.svg');*/
 }
 
 .utils .share {
@@ -814,7 +878,7 @@ export default {
     font-weight: bold;
     /*color: var(--color-main-text);*/
     text-decoration: none;
-    margin:0;
+    margin: 0;
 }
 
 .heading a:hover {

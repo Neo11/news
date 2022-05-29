@@ -70,19 +70,34 @@
                     <fieldset>
                         <ul>
                             <li>
-                                <CheckboxRadioSwitch>{{ t("news", "Disable mark read through scrolling") }}</CheckboxRadioSwitch>
+                                <CheckboxRadioSwitch :checked.sync="settings.preventReadOnScroll"
+                                                     @update:checked="toggleSetting('preventReadOnScroll')">
+                                    {{ t("news", "Disable mark read through scrolling") }}
+                                </CheckboxRadioSwitch>
                             </li>
                             <li>
-                                <CheckboxRadioSwitch>{{ t("news", "Compact view") }}</CheckboxRadioSwitch>
+                                <CheckboxRadioSwitch :checked.sync="settings.compact"
+                                                     @update:checked="toggleSetting('compact')">
+                                    {{ t("news", "Compact view") }}
+                                </CheckboxRadioSwitch>
+                            </li>
+                            <li v-if="settings.compact">
+                                <CheckboxRadioSwitch :checked.sync="settings.compactExpand"
+                                                     @update:checked="toggleSetting('compactExpand')">
+                                    {{ t("news", "Expand articles on key navigation") }}
+                                </CheckboxRadioSwitch>
                             </li>
                             <li>
-                                <CheckboxRadioSwitch>{{ t("news", "Expand articles on key navigation") }}</CheckboxRadioSwitch>
+                                <CheckboxRadioSwitch :checked.sync="settings.showAll"
+                                                     @update:checked="toggleSetting('showAll')">
+                                    {{ t("news", "Show all articles") }}
+                                </CheckboxRadioSwitch>
                             </li>
                             <li>
-                                <CheckboxRadioSwitch>{{ t("news", "Show all articles") }}</CheckboxRadioSwitch>
-                            </li>
-                            <li>
-                                <CheckboxRadioSwitch>{{ t("news", "Reverse ordering (oldest on top)") }}</CheckboxRadioSwitch>
+                                <CheckboxRadioSwitch :checked.sync="settings.oldestFirst"
+                                                     @update:checked="toggleSetting('oldestFirst')">
+                                    {{ t("news", "Reverse ordering (oldest on top)") }}
+                                </CheckboxRadioSwitch>
                             </li>
                         </ul>
                     </fieldset>
@@ -249,6 +264,9 @@ export default {
         totalUnreadCount() {
             return this.$store.state.unreadCount
         },
+        settings() {
+            return this.$store.state.settings
+        },
     },
     methods: {
         newFolder(value) {
@@ -264,6 +282,9 @@ export default {
         },
         closeShowAddFeed() {
             this.showAddFeed = false;
+        },
+        toggleSetting(key) {
+            this.$store.dispatch('updateOption', {key})
         }
     },
     created() {

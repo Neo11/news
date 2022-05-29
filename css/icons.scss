@@ -1,1 +1,54 @@
 @include icon-black-white('rss', 'news', 1, false);
+
+
+.icon-star {
+  background-image: url('../img/inactive_star.svg');
+}
+
+.icon-starred {
+  background-image: url('../img/active_star.svg');
+}
+
+.icon-star:hover {
+  background-image: url('../img/hover_star.svg');
+}
+
+.icon-rss {
+  background-image: url('../img/rss.svg') !important;
+}
+
+.icon-rss-unread {
+  background-image: url('../img/rss_unread.svg') !important;
+}
+
+.icon-add-folder {
+  background-image: url('../img/add_folder.svg') !important;
+}
+
+.icon-facebook {
+  background-image: url('../img/facebook.svg') !important;
+}
+
+.icon-twitter {
+  background-image: url('../img/twitter.svg') !important;
+}
+.icon-pinned {
+  background-image: url('../img/pinned.svg');
+}
+
+.icon-unpinned {
+  background-image: url('../img/unpinned.svg');
+}
+
+.icon-updatemode-default {
+  background-image: url('../img/updatemodedefault.svg');
+}
+
+.icon-updatemode-unread {
+  background-image: url('../img/updatemodeunread.svg');
+}
+
+.updateerror a {
+  background-color: var(--color-warning) !important;
+}
+

@@ -48,12 +48,9 @@ export default {
     methods: {
         async sites() {
             const settings = await axios.get(generateUrl("/apps/news/settings"));
-            console.log(settings.data);
-            console.log(settings.data.settings.exploreUrl);
 
             const exploreUrl = settings.data.settings.exploreUrl + 'feeds.en.json';
             const explore = await axios.get(exploreUrl);
-            console.log(explore.data);
 
             Object.keys(explore.data).forEach(key =>
                 explore.data[key].forEach(value =>

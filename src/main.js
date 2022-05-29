@@ -19,8 +19,32 @@ import { Tooltip } from '@nextcloud/vue'
 
 Vue.directive('tooltip', Tooltip)
 
+const defaultLanguageCode = 'en';
+const supportedLanguageCodes = [
+    'ar-ma', 'ar', 'bg', 'ca', 'cs', 'cv', 'da', 'de', 'el', 'en', 'en-ca',
+    'en-gb', 'eo', 'es', 'et', 'eu', 'fi', 'fr-ca', 'fr', 'gl', 'he', 'hi',
+    'hu', 'id', 'is', 'it', 'ja', 'ka', 'ko', 'lv', 'ms-my', 'nb', 'ne',
+    'nl', 'pl', 'pt-br', 'pt', 'ro', 'ru', 'sk', 'sl', 'sv', 'th', 'tr',
+    'tzm-la', 'tzm', 'uk', 'zh-cn', 'zh-tw'
+];
+
+function processLanguageCode(languageCode) {
+    languageCode = languageCode.replace('_', '-').toLowerCase();
+
+    if (supportedLanguageCodes.indexOf(languageCode) < 0) {
+        languageCode = languageCode.split('-')[0];
+    }
+
+    if (supportedLanguageCodes.indexOf(languageCode) < 0) {
+        languageCode = defaultLanguageCode;
+    }
+
+    return languageCode;
+}
+
 const feedUrl = generateUrl("/apps/news/feeds")
 const folderUrl = generateUrl("/apps/news/folders")
+const settingsUrl = generateUrl("/apps/news/settings")
 
 const routes = [
     {
@@ -50,7 +74,16 @@ const store = new Vuex.Store({
     state: {
         folders: [],
         feeds: [],
-        unreadCount: 0
+        unreadCount: 0,
+        settings: {
+            language: 'en',
+            showAll: false,
+            compact: false,
+            oldestFirst: false,
+            preventReadOnScroll: false,
+            compactExpand: false,
+            exploreUrl: ''
+        }
     },
     mutations: {
         addFolders(state, folders) {
@@ -80,9 +113,37 @@ const store = new Vuex.Store({
                 }
                 state.unreadCount += it.unreadCount
             })
+        },
+        setOption(state, {key, value}) {
+            state.settings[key] = value;
         }
     },
     actions: {
+        loadOptions({commit}) {
+            axios.get(settingsUrl).then(
+                response => {
+                    for (let property in response.data.settings) {
+                        let value = response.data.settings[property];
+                        if (property === 'language') {
+                            value = processLanguageCode(value);
+                        }
+                        commit('setOption', {key: property, value});
+                    }
+                }
+            );
+        },
+        updateOption({commit}, {key}) {
+            commit('setOption', {key, value: this.state.settings[key]})
+
+            axios.put(settingsUrl, {
+                    language: this.state.settings.language,
+                    showAll: this.state.settings.showAll,
+                    compact: this.state.settings.compact,
+                    oldestFirst: this.state.settings.oldestFirst,
+                    compactExpand: this.state.settings.compactExpand,
+                    preventReadOnScroll: this.state.settings.preventReadOnScroll
+            }).then();
+        },
         addFolder({commit}, {folder}) {
             axios.post(folderUrl, {folderName: folder.name}).then(
                 response => commit('addFolders', response.data.folders)
@@ -101,7 +162,6 @@ const store = new Vuex.Store({
             )
         },
         loadFolder({commit}) {
-            console.log('loading folders')
             axios.get(folderUrl).then(
                 response => {
                     commit('addFolders', response.data.folders);
@@ -112,7 +172,6 @@ const store = new Vuex.Store({
             )
         },
         async addFeed({commit}, {feedReq}) {
-            console.log(feedReq)
             let url = feedReq.url.trim();
             if (!url.startsWith('http')) {
                 url = 'https://' + url;
