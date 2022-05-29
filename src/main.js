@@ -15,10 +15,6 @@ Vue.prototype.OCA = OCA
 Vue.use(Vuex)
 Vue.use(VueRouter)
 
-import { Tooltip } from '@nextcloud/vue'
-
-Vue.directive('tooltip', Tooltip)
-
 const defaultLanguageCode = 'en';
 const supportedLanguageCodes = [
     'ar-ma', 'ar', 'bg', 'ca', 'cs', 'cv', 'da', 'de', 'el', 'en', 'en-ca',
@@ -42,38 +38,16 @@ function processLanguageCode(languageCode) {
     return languageCode;
 }
 
-const feedUrl = generateUrl("/apps/news/feeds")
-const folderUrl = generateUrl("/apps/news/folders")
-const settingsUrl = generateUrl("/apps/news/settings")
-
-const routes = [
-    {
-        name: 'explore',
-        path: '#explore',
-        component: Explore
-    },
-    {
-        name: 'content',
-        path: '#content',
-        component: Content
-    },
-    {
-        name: 'content_unread',
-        path: '#content/unread',
-        component: Content
-    },
-]
-
-const router = new VueRouter({
-    mode: 'history',
-    base: generateUrl('apps/news'),
-    routes
-});
+export const feedUrl = generateUrl("/apps/news/feeds")
+export const folderUrl = generateUrl("/apps/news/folders")
+export const itemsUrl = generateUrl("/apps/news/items")
+export const settingsUrl = generateUrl("/apps/news/settings")
 
 const store = new Vuex.Store({
     state: {
         folders: [],
         feeds: [],
+        items: [],
         unreadCount: 0,
         settings: {
             language: 'en',
@@ -116,6 +90,24 @@ const store = new Vuex.Store({
         },
         setOption(state, {key, value}) {
             state.settings[key] = value;
+        },
+        markRead(state, feedId) {
+            const feed = state.feeds.find(feed => feed.id === feedId)
+            feed.unreadCount -= 1;
+            const folder = state.folders.find(folder => folder.id === feed.folderId)
+            if (!!folder) {
+                folder.unreadCount -= 1;
+            }
+            state.unreadCount -= 1;
+        },
+        markUnread(state, feedId) {
+            const feed = state.feeds.find(feed => feed.id === feedId)
+            feed.unreadCount += 1;
+            const folder = state.folders.find(folder => folder.id === feed.folderId)
+            if (!!folder) {
+                folder.unreadCount += 1;
+            }
+            state.unreadCount += 1;
         }
     },
     actions: {
@@ -213,6 +205,36 @@ const store = new Vuex.Store({
             )
         }
     }
+});
+
+
+
+const routes = [
+    { path: "/", redirect: 'unread' },
+    {
+        name: 'explore',
+        path: '/explore',
+        component: Explore
+    },
+    {
+        name: 'content',
+        path: '/content',
+        component: Content
+    },
+    {
+        name: 'content_unread',
+        path: '/unread',
+        component: Content,
+        beforeEnter: (to, from, next) => {
+            console.log(store.state.settings.oldestFirst);
+            next();
+        }
+    },
+]
+
+const router = new VueRouter({
+    linkActiveClass: "active",
+    routes
 });
 
 export default new Vue({

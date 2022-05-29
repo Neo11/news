@@ -52,3 +52,14 @@
   background-color: var(--color-warning) !important;
 }
 
+.icon-full-text-enabled {
+  background-image: url('../img/fulltext.svg');
+  background-size: 50%;
+  opacity: .5;
+}
+
+.icon-full-text-disabled {
+  background-image: url('../img/nonfulltext.svg');
+  background-size: 50%;
+  opacity: .5;
+}

@@ -2,7 +2,7 @@
 	<Content app-name="news">
 		<Sidebar />
         <AppContent>
-            <router-view></router-view>
+            <RouterView />
         </AppContent>
 	</Content>
 </template>

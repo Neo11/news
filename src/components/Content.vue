@@ -8,34 +8,26 @@
         <div id="articles"
              :class="{ compact: settings.compact, 'feed-view': isFeed }"
              class="app-content-detail">
-
-            <!--        <button ng-controller="NavigationController as Navigation" id="mark-all-read-button" ng-click="Navigation.markCurrentRead()" class="hidden">-->
-            <!--            <span title="Mark Read" class="icon-checkmark"></span>-->
-            <!--        </button>-->
-
             <ul>
-                <!--            orderBy:'id':Content.oldestFirst:Content.sortIds track by item.id"-->
-                <!--            ng-mouseup="Content.markRead(item.id)"-->
-                <!--            news-on-active="Content.setItemActive(item.id)"-->
                 <li class="item"
                     :class="[getFeed(item.feedId).cssClass, {read: !item.unread, open: item.show, active: isItemActive(item.id)}]"
                     v-for="item in items" :key="item.id"
-                    @click="markRead(item.id);toggleItem(item)"
-                    @mouseup="markRead(item.id)">
+                    @click.self="markRead(item);toggleItem(item)"
+                    @mouseup="markRead(item)">
                     <div class="utils">
                         <ul>
                             <li class="util-spacer"></li>
                             <li class="util only-in-compact">
                                 <a class="external icon-link"
-                                   @click="markRead(item.id)"
+                                   @click.self="markRead(item)"
                                    target="_blank"
                                    rel="noreferrer"
                                    :href="item.url"
-                                   :title="t('news','Open website')"
-                                   news-stop-propagation>
+                                   :title="t('news','Open website')">
                                 </a>
                             </li>
                             <li class="title only-in-compact"
+                                @click="markRead(item);toggleItem(item)"
                                 :class="{ 'icon-rss': !getFeed(item.feedId).faviconLink }"
                                 :style="{ backgroundImage: 'url(' + getFeed(item.feedId).faviconLink + ')' }">
                                 <h1 ng-attr-dir="item.rtl && 'rtl'"><a>{{ item.title }} <span
@@ -47,20 +39,18 @@
                                 </time>
                             </li>
                             <li @click="toggleStar(item.id)"
-                                class="util"
-                                news-stop-propagation>
+                                class="util">
                                 <button class="icon-star"
                                         v-if="!item.starred"
-                                        title="t('news','Star article')">
+                                        :title="t('news','Star article')">
                                 </button>
                                 <button class="icon-starred"
                                         v-if="item.starred"
                                         :title="t('news','Unstar article')">
                                 </button>
                             </li>
-                            <li @click="toggleKeepUnread(item.id)"
-                                class="util toggle-keep-unread"
-                                news-stop-propagation>
+                            <li @click="toggleKeepUnread(item)"
+                                class="util toggle-keep-unread">
                                 <button class="icon-toggle"
                                         v-if="!item.keepUnread"
                                         :title="t('news','Keep article unread')">
@@ -87,7 +77,7 @@
                             </li>
 
 
-                            <li class="util more" news-stop-propagation v-if="false">
+                            <li class="util more" v-if="false">
                                 <button class="icon-more"
                                         news-toggle-show="#actions-item.id"></button>
                                 <div class="article-actions" id="actions-item.id">
@@ -244,7 +234,7 @@ import ActionInput from '@nextcloud/vue/dist/Components/ActionInput'
 import ActionButton from '@nextcloud/vue/dist/Components/ActionButton'
 import ListItemIcon from '@nextcloud/vue/dist/Components/ListItemIcon'
 import axios from "@nextcloud/axios";
-import {generateUrl} from "@nextcloud/router";
+import {itemsUrl} from "../main";
 
 
 const maxRelDistance = 90*86400*1000;
@@ -297,25 +287,36 @@ export default {
     methods: {
         toggleItem(item) {
             if (this.settings.compact) {
-                console.log('toggle!')
                 this.$set(item, 'show', !item.show);
             }
         },
-        markRead(itemId) {
-            // TODO
-        },
-        setItemActive(itemId) {
-            // TODO
+        markRead(item) {
+
+            this.activeItem = item.id;
+
+            if (item.keepUnread || item.unread === false) {
+                return;
+            }
+
+            this.$set(item, 'unread', false);
+            axios.post(itemsUrl + '/' + item.id + '/read', { isRead: true });
+
+            this.$store.commit('markRead', item.feedId);
         },
         toggleStar(itemId) {
             // TODO
         },
-        toggleKeepUnread(itemId) {
-            // TODO
+        toggleKeepUnread(item) {
+            if (!item.unread) {
+                this.$store.commit('markUnread', item.feedId);
+                this.$set(item, 'unread', true);
+                axios.post(itemsUrl + '/' + item.id + '/read', { isRead: false });
+            }
+
+            this.$set(item, 'keepUnread', !item.keepUnread);
         },
         isItemActive(itemId) {
-            return true;
-            // TODO
+            return this.activeItem === itemId;
         },
         getMediaType(type) {
             if (type && type.indexOf('audio') === 0) {
@@ -338,13 +339,16 @@ export default {
             items: [],
             value: formattedOptions[0],
             formattedOptions,
+            activeItem: null
         }
     },
     created() {
         axios.get(
-            generateUrl('apps/news/items?limit=40&oldestFirst=false&search=&showAll=true&type=6'))
+            itemsUrl + '?limit=40&oldestFirst=false&search=&showAll=true&type=6')
         .then(result => {
-            this.items = result.data.items;
+            let compareFn = (i1, i2) => i2.pubDate - i1.pubDate;
+            let compareFnReverse = (i1, i2) => i1.pubDate - i2.pubDate;
+            this.items = result.data.items.sort(this.settings.oldestFirst ? compareFnReverse : compareFn);
         })
     },
     filters: {

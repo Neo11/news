@@ -17,7 +17,7 @@
                            :to="{ name: 'content_unread' }">
             <template #actions>
                 <ActionButton icon="icon-checkmark" @click="alert('Edit')">
-                    t('news','Mark read')
+                    {{ t('news','Mark read') }}
                 </ActionButton>
             </template>
             <template #counter>
@@ -27,7 +27,7 @@
         <AppNavigationItem :title="t('news','All articles')" icon="icon-rss">
             <template #actions>
                 <ActionButton icon="icon-checkmark" @click="alert('Edit')">
-                    t('news','Mark read')
+                    {{ t('news','Mark read') }}
                 </ActionButton>
             </template>
         </AppNavigationItem>
@@ -36,11 +36,11 @@
                 <CounterBubble>?</CounterBubble>
             </template>
         </AppNavigationItem>
-        <Feed :feed="feed" v-for="feed in feedsWithoutFolders" :key="feed.id"></Feed>
+        <Feed :feed="feed" v-for="feed in feedsWithoutFolders" :key="'feed_' + feed.id"></Feed>
         <AppNavigationItem v-for="folder in folders" :title="folder.name" icon="icon-folder"
-                           :allowCollapse="true" :key="folder.id">
+                           :allowCollapse="true" :key="'folder_' + folder.id">
             <template #default>
-                <Feed :feed="feed" v-for="feed in folder.feeds" :key="feed.id"></Feed>
+                <Feed :feed="feed" v-for="feed in folder.feeds" :key="'feed_' + feed.id"></Feed>
             </template>
             <template #counter v-if="folder.unreadCount > 0">
                 <CounterBubble>{{ folder.unreadCount }}</CounterBubble>
@@ -106,12 +106,12 @@
 
                         <AppSettingsSection :title="t('news', 'Subscriptions (OPML)')">
 
-                            <Button :tooltip="t('news', 'Import')" style="width: 100%; margin: 6px">
+                            <Button style="width: 100%; margin: 6px">
 <!--                                <span class="icon-upload svg button-icon-label"></span>-->
                                 {{ t('news', 'Import') }}
                             </Button>
 
-                            <Button :tooltip="t('news', 'Export')" style="width: 100%; margin: 6px">
+                            <Button style="width: 100%; margin: 6px">
                                 {{ t('news', 'Export') }}
                             </Button>
 
