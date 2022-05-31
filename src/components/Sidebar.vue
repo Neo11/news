@@ -14,7 +14,7 @@
 
         <AppNavigationItem :title="t('news','Unread articles')"
                            icon="icon-rss"
-                           :to="{ name: 'content_unread' }">
+                           to="/feed/6/-1">
             <template #actions>
                 <ActionButton icon="icon-checkmark" @click="alert('Edit')">
                     {{ t('news','Mark read') }}
@@ -24,21 +24,26 @@
                 <CounterBubble>{{ totalUnreadCount }}</CounterBubble>
             </template>
         </AppNavigationItem>
-        <AppNavigationItem :title="t('news','All articles')" icon="icon-rss">
+        <AppNavigationItem :title="t('news','All articles')"
+                           icon="icon-rss"
+                           to="/feed/0/-1">
             <template #actions>
                 <ActionButton icon="icon-checkmark" @click="alert('Edit')">
                     {{ t('news','Mark read') }}
                 </ActionButton>
             </template>
         </AppNavigationItem>
-        <AppNavigationItem :title="t('news','Starred')" icon="icon-starred">
+        <AppNavigationItem :title="t('news','Starred')"
+                           icon="icon-starred"
+                           to="/feed/2/-1">
             <template #counter>
                 <CounterBubble>?</CounterBubble>
             </template>
         </AppNavigationItem>
         <Feed :feed="feed" v-for="feed in feedsWithoutFolders" :key="'feed_' + feed.id"></Feed>
         <AppNavigationItem v-for="folder in folders" :title="folder.name" icon="icon-folder"
-                           :allowCollapse="true" :key="'folder_' + folder.id">
+                           :allowCollapse="true" :key="'folder_' + folder.id"
+                           :to="'/feed/1/' + folder.id">
             <template #default>
                 <Feed :feed="feed" v-for="feed in folder.feeds" :key="'feed_' + feed.id"></Feed>
             </template>
@@ -60,7 +65,7 @@
 
         <AppNavigationItem :title="t('news','Explore')"
                            icon="icon-link"
-                           :to="{ name: 'explore' }">
+                           to="/explore">
         </AppNavigationItem>
 
 

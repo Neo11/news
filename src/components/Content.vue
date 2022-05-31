@@ -342,13 +342,21 @@ export default {
             activeItem: null
         }
     },
-    created() {
-        axios.get(
-            itemsUrl + '?limit=40&oldestFirst=false&search=&showAll=true&type=6')
-        .then(result => {
+    beforeRouteUpdate(to, from, next) {
+        console.log('Navigating');
+        const params = {
+            type: to.params.type,
+            id: to.params.id == -1 ? null : to.params.id,
+            offset: 0,
+            limit: 40,
+            oldestFirst: this.settings.oldestFirst,
+            showAll: this.settings.showAll
+        }
+        axios.get(itemsUrl, { params }).then(result => {
             let compareFn = (i1, i2) => i2.pubDate - i1.pubDate;
             let compareFnReverse = (i1, i2) => i1.pubDate - i2.pubDate;
             this.items = result.data.items.sort(this.settings.oldestFirst ? compareFnReverse : compareFn);
+            next();
         })
     },
     filters: {

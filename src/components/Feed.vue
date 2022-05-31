@@ -1,5 +1,6 @@
 <template>
-    <AppNavigationItem :title="feed.title" :to="{ name: 'content' }">
+    <AppNavigationItem :title="feed.title"
+                       :to="'/feed/0/' + feed.id">
         <template #icon>
             <img :src="feed.faviconLink" v-if="feed.faviconLink" alt="feedIcon">
             <div class="icon-rss" v-if="!feed.faviconLink"></div>

@@ -43,6 +43,16 @@ export const folderUrl = generateUrl("/apps/news/folders")
 export const itemsUrl = generateUrl("/apps/news/items")
 export const settingsUrl = generateUrl("/apps/news/settings")
 
+export class FEED_TYPE {
+    FEED = 0;
+    FOLDER = 1;
+    STARRED = 2;
+    SUBSCRIPTIONS = 3;
+    SHARED = 4;
+    EXPLORE = 5;
+    UNREAD = 6;
+}
+
 const store = new Vuex.Store({
     state: {
         folders: [],
@@ -212,24 +222,13 @@ const store = new Vuex.Store({
 const routes = [
     { path: "/", redirect: 'unread' },
     {
-        name: 'explore',
         path: '/explore',
         component: Explore
     },
     {
-        name: 'content',
-        path: '/content',
+        path: '/feed/:type/:id',
         component: Content
-    },
-    {
-        name: 'content_unread',
-        path: '/unread',
-        component: Content,
-        beforeEnter: (to, from, next) => {
-            console.log(store.state.settings.oldestFirst);
-            next();
-        }
-    },
+    }
 ]
 
 const router = new VueRouter({
